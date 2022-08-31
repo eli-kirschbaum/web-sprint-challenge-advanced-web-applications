@@ -12,6 +12,7 @@ import axiosWithAuth from '../axios/index'
 const articlesUrl = 'http://localhost:9000/api/articles'
 const loginUrl = 'http://localhost:9000/api/login'
 
+
 export default function App() {
   // ✨ MVP can be achieved with these states
   const [message, setMessage] = useState('')
@@ -34,8 +35,8 @@ export default function App() {
     // and a message saying "Goodbye!" should be set in its proper state.
     // In any case, we should redirect the browser back to the login screen,
     // using the helper above.
-    localStorage.removeItem('theToken')
     setMessage('Goodbye!')
+    localStorage.removeItem('theToken')
     redirectToLogin()
   }
 
@@ -51,7 +52,6 @@ export default function App() {
     axios
       .post(loginUrl, { username, password })
       .then((res) => {
-        console.log(res)
         localStorage.setItem('theToken', res.data.token)
         setSpinnerOn(false)
         navigate('./Articles')
@@ -73,11 +73,23 @@ export default function App() {
     // Don't forget to turn off the spinner!
     setMessage('')
     setSpinnerOn(true)
-    axiosWithAuth.get(articlesUrl)
-      .then((res) => {
+    axios({
+      url: articlesUrl,
+      method: 'get',
+      headers: {
+        Authorization: localStorage.getItem('theToken')
+      }
+    })
+      .then(res => {
         console.log(res)
+        setSpinnerOn(false)
+        setArticles(res.data.articles)
+        setMessage(res.data.message)
       })
-      .catch((err) => console.log({ err }))
+      .catch(err => {
+        console.log({ err })
+      })
+      
       
   }
 
@@ -86,29 +98,66 @@ export default function App() {
     // The flow is very similar to the `getArticles` function.
     // You'll know what to do! Use log statements or breakpoints
     // to inspect the response from the server.
-    axiosWithAuth.post(articlesUrl, article)
-      .then()
-      .catch((err) => console.log({ err }))
+    setMessage('')
+    setSpinnerOn(true)
+    axios({
+      url: articlesUrl,
+      method: 'post',
+      headers: {
+        Authorization: localStorage.getItem('theToken')
+      },
+      data: article,
+    })
+      .then(res => {
+        console.log(res)
+        setSpinnerOn(false)
+        const { article } = res.data
+        setArticles(articles.concat(article))
+
+      })
+      .catch(err => {
+        console.log({ err })
+      })
+    
   }
 
   const updateArticle = ({ article_id, article }) => {
     // ✨ implement
     // You got this!
-    axiosWithAuth.put(articlesUrl, article)
-      .then()
-      .catch((err) => {})
+    axiosWithAuth().put()
+      .then(res => {
+        console.log(res)
+        setMessage(res.data.message)
+      })
+      .catch(err => {
+        console.log({ err })
+        setMessage(err.response.data.message)
+      })
   }
 
   const deleteArticle = article_id => {
     // ✨ implement
-
+    axiosWithAuth().delete(`${articlesUrl}/${article_id}`)
+      .then(res => {
+        console.log(res)
+        setArticles(articles.filter(art => (art.article_id != article_id)))
+        setMessage(res.data.message)
+      }) 
+      .catch(err => {
+        console.log({ err })
+        setMessage(err.response.data.message)
+      })
   }
 
   return (
     // ✨ fix the JSX: `Spinner`, `Message`, `LoginForm`, `ArticleForm` and `Articles` expect props ❗
     <>
-      <Spinner />
-      <Message />
+      <Spinner
+       on={spinnerOn}
+       />
+      <Message 
+        message={message}
+      />
       <button id="logout" onClick={logout}>Logout from app</button>
       <div id="wrapper" style={{ opacity: spinnerOn ? "0.25" : "1" }}> {/* <-- do not change this line */}
         <h1>Advanced Web Applications</h1>
@@ -117,11 +166,26 @@ export default function App() {
           <NavLink id="articlesScreen" to="/articles">Articles</NavLink>
         </nav>
         <Routes>
-          <Route path="/" element={<LoginForm />} />
+          <Route path="/" element={<LoginForm login={login}/>} />
           <Route path="articles" element={
             <AuthRoute>
-              <ArticleForm />
-              <Articles />
+              <ArticleForm
+                postArticle={postArticle}
+                setCurrentArticleId={setCurrentArticleId}
+                updateArticle={updateArticle}
+                currentArticle={articles.find(art =>(art.article_id === currentArticleId))}
+               />
+              <Articles 
+                getArticles={getArticles}
+                articles={articles}
+                message={message}
+                setArticles={setArticles}
+                setSpinnerOn={setSpinnerOn}
+                setMessage={setMessage}
+                deleteArticle={deleteArticle}
+                setCurrentArticleId={setCurrentArticleId}
+                currentArticleId={currentArticleId}
+                />
             </AuthRoute>
           } /> 
           
