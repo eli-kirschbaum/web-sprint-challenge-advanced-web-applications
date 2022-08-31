@@ -36,7 +36,7 @@ export default function App() {
     // In any case, we should redirect the browser back to the login screen,
     // using the helper above.
     setMessage('Goodbye!')
-    localStorage.removeItem('theToken')
+    localStorage.removeItem('token')
     redirectToLogin()
   }
 
@@ -52,7 +52,7 @@ export default function App() {
     axios
       .post(loginUrl, { username, password })
       .then((res) => {
-        localStorage.setItem('theToken', res.data.token)
+        localStorage.setItem('token', res.data.token)
         setSpinnerOn(false)
         navigate('./Articles')
       })
@@ -77,7 +77,7 @@ export default function App() {
       url: articlesUrl,
       method: 'get',
       headers: {
-        Authorization: localStorage.getItem('theToken')
+        Authorization: localStorage.getItem('token')
       }
     })
       .then(res => {
@@ -104,7 +104,7 @@ export default function App() {
       url: articlesUrl,
       method: 'post',
       headers: {
-        Authorization: localStorage.getItem('theToken')
+        Authorization: localStorage.getItem('token')
       },
       data: article,
     })
@@ -113,6 +113,7 @@ export default function App() {
         setSpinnerOn(false)
         const { article } = res.data
         setArticles(articles.concat(article))
+        setMessage(res.data.message)
 
       })
       .catch(err => {
@@ -121,17 +122,22 @@ export default function App() {
     
   }
 
-  const updateArticle = ({ article_id, article }) => {
+  const updateArticle = (article) => {
     // ✨ implement
     // You got this!
-    axiosWithAuth().put()
+    axiosWithAuth().put(`${articlesUrl}/${article.article_id}`, article)
       .then(res => {
         console.log(res)
         setMessage(res.data.message)
+        const updatedArticle = res.data.article
+        setArticles(articles.map(
+          art => (art.article_id === article.article_id) ? updatedArticle : art 
+          ))
+        setCurrentArticleId(null)
       })
       .catch(err => {
         console.log({ err })
-        setMessage(err.response.data.message)
+        //setMessage(err.response.data.message)
       })
   }
 

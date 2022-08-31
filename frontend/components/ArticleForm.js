@@ -33,7 +33,12 @@ export default function ArticleForm(props) {
     // ✨ implement
     // We must submit a new post or update an existing one,
     // depending on the truthyness of the `currentArticle` prop.
-    postArticle(values)
+    if (currentArticle) {
+      updateArticle(values)
+    } else {
+      postArticle(values)
+      setValues(initialFormValues)
+    }
     setValues(initialFormValues)
   }
 
